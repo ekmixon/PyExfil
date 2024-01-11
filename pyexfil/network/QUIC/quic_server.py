@@ -51,7 +51,7 @@ class AESCipher(object):
 
     @staticmethod
     def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
+        return s[:-ord(s[-1:])]
 
 
 class HTTPSExfiltrationServer():
@@ -120,12 +120,10 @@ class HTTPSExfiltrationServer():
                                 continue
                         else:
                             self.current_file += dec_data
-                            if int(counter) == int(self.count):
+                            if counter == int(self.count):
                                 sys.stdout.write("[.]\tThis is the final packet in the file.\n")
-                                f = open(self.filename, 'wb')
-                                f.write(self.current_file)
-                                f.close()
-
+                                with open(self.filename, 'wb') as f:
+                                    f.write(self.current_file)
                                 if md5(filename) == self.md5:
                                     sys.stdout.write("[+]\tCompleted file transfer '%s' with MD5 match.\n" % self.filename.replace("_", "/"))
                                     self.filename = None

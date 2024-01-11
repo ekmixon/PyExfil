@@ -15,7 +15,7 @@ MODES = ['baseimage', 'encode', 'decode']
 
 
 def _str2bin(raw_data):
-    return str(bin(int(binascii.hexlify(raw_data), 16)))[2:]
+    return bin(int(binascii.hexlify(raw_data), 16))[2:]
 
 
 def file2array(file_name):
@@ -23,9 +23,8 @@ def file2array(file_name):
     Will covert file name to a 3xlen array of the binary data
     """
     try:
-        f = open(file_name, 'rb')
-        st = f.read()
-        f.close()
+        with open(file_name, 'rb') as f:
+            st = f.read()
     except IOError as e:
         sys.stderr.write("\t[!] Cannot open the file '%s'.\n" % file_name)
         return False
@@ -40,8 +39,8 @@ def file2array(file_name):
     split_by_3 = [bin_data[i:i + n] for i in range(0, len(bin_data), n)]
 
     retMe = []
+    n = 1
     for item in split_by_3:
-        n = 1
         item = [item[i:i + n] for i in range(0, len(item), n)]
         try:
             retMe.append([int(item[0]), int(item[1]), int(item[2])])
@@ -73,14 +72,12 @@ def openImage(image_path):
 
 def image2pixelarray(imgObj):
     arr = np.array(imgObj)
-    pixels = list(imgObj.getdata())
-    return pixels
+    return list(imgObj.getdata())
 
 
 def get_file_content(path):
-    f = open(path, 'rb')
-    exfilMe = f.read()
-    f.close()
+    with open(path, 'rb') as f:
+        exfilMe = f.read()
     return exfilMe
 
 
@@ -101,15 +98,15 @@ def CreateExfiltrationFile(originalImage, rawData, OutputImage):
     offset = 0
 
     for pixel in pixels:
-        if 255 == pixel[0]:
+        if pixel[0] == 255:
             sys.stderr.write(
                 "\t[!] You have choosen an image with absolute colours. Please choose another image.\n")
             sys.exit(1)
-        if 255 == pixel[1]:
+        if pixel[1] == 255:
             sys.stderr.write(
                 "\t[!] You have choosen an image with absolute colours. Please choose another image.\n")
             sys.exit(1)
-        if 255 == pixel[2]:
+        if pixel[2] == 255:
             sys.stderr.write(
                 "\t[!] You have choosen an image with absolute colours. Please choose another image.\n")
             sys.exit(1)
@@ -129,15 +126,14 @@ def CreateExfiltrationFile(originalImage, rawData, OutputImage):
     padding_length = TotalPixels - len(arrayToEncorprate)
     sys.stdout.write("\t[.] Will now incorporate %s bits of padding.\n" % (
         TotalPixels - len(arrayToEncorprate)))
-    for i in range(TotalPixels - padding_length, TotalPixels):
-        FinalPixels.append(
-            (
-                int(pixels[i][0]) + BUFF_CHAR,
-                int(pixels[i][1]) + BUFF_CHAR,
-                int(pixels[i][2]) + BUFF_CHAR
-            )
+    FinalPixels.extend(
+        (
+            int(pixels[i][0]) + BUFF_CHAR,
+            int(pixels[i][1]) + BUFF_CHAR,
+            int(pixels[i][2]) + BUFF_CHAR,
         )
-
+        for i in range(TotalPixels - padding_length, TotalPixels)
+    )
     total_data_length = padding_length + len(arrayToEncorprate)
     sys.stdout.write("\t[+] Total of %s bits of data + %s bits of padding for a total of %s bits.\n" %
                      (len(arrayToEncorprate), padding_length, total_data_length))
@@ -192,11 +188,11 @@ def DecodeExfiltrationFile(originalImage, newImage, outputPath):
     # undecodedData = rawDeStegaData[offset:]
     undecodedData = rawDeStegaData.replace(str(BUFF_CHAR), "")
     for char in undecodedData:
-        if char != '0' and char != '1':
+        if char not in ['0', '1']:
             print(char)
 
     one_ring_to_bind_them = ''.join(undecodedData)
-    bin_str = "0b" + one_ring_to_bind_them
+    bin_str = f"0b{one_ring_to_bind_them}"
     more_back = "%x" % int(bin_str, 2)
     bring_it_home = binascii.unhexlify(more_back)
 
@@ -204,9 +200,8 @@ def DecodeExfiltrationFile(originalImage, newImage, outputPath):
         "\t[+] Seems like that are %s bytes of information encoded in the file.\n" % len(bring_it_home))
     decompDat = zlib.decompress(bring_it_home)
 
-    f = open(outputPath, 'wb')
-    f.write(decompDat)
-    f.close()
+    with open(outputPath, 'wb') as f:
+        f.write(decompDat)
     sys.stdout.write(
         "\t[+] Decoding process complete and output written to %s.\n\n" % outputPath)
 
@@ -220,18 +215,9 @@ def PrepareBaseImage(imagePath, outputPath):
     FinalPixels = []
     for pixel in pixels:
         max_can_be = PIXEL_MAX-BUFF_CHAR
-        if pixel[0] > max_can_be:
-            red = max_can_be
-        else:
-            red = pixel[0]
-        if pixel[1] > max_can_be:
-            green = max_can_be
-        else:
-            green = pixel[0]
-        if pixel[2] > max_can_be:
-            blue = max_can_be
-        else:
-            blue = pixel[0]
+        red = min(pixel[0], max_can_be)
+        green = max_can_be if pixel[1] > max_can_be else pixel[0]
+        blue = max_can_be if pixel[2] > max_can_be else pixel[0]
         FinalPixels.append((red, green, blue))
 
     im2 = Image.new(img.mode, (ImageWidth, ImageHeight))

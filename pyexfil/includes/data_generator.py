@@ -113,8 +113,7 @@ def _build_number(prefix, generator, length=16):
 		candidate.append(digit)
 
 	joined_number = ''.join(candidate)
-	joined_number_w_digit = luhn.append(joined_number)
-	return joined_number_w_digit
+	return luhn.append(joined_number)
 
 
 def _getPrefix(names):
@@ -141,7 +140,7 @@ def GenerateCard(kind):
 	cvv = ''.join(str(x) for x in cvv)
 	exp_year = randint(now.year+2, now.year+10)
 	exp_month = str(randint(1,12)).zfill(2)
-	return [kind, ccnumber, cvv, "%s/%s" % (exp_year, exp_month)]
+	return [kind, ccnumber, cvv, f"{exp_year}/{exp_month}"]
 
 
 def GenerateName():
@@ -173,30 +172,30 @@ def EmailGenerator(firstname, lastname, domain=""):
 	lastname = lastname.lower()
 	g = randint(5, 1000)
 	if g % 4 == 0:
-		pref = "%s.%s" % (firstname[0], lastname)
+		pref = f"{firstname[0]}.{lastname}"
 	elif g % 3 == 0:
-		pref = "%s%s" % (lastname, firstname[0])
+		pref = f"{lastname}{firstname[0]}"
 	elif g % 5 == 0:
-		pref = "%s_%s" % (firstname, lastname)
+		pref = f"{firstname}_{lastname}"
 	elif g % 7 == 0:
-		pref = "%s_%s" % (firstname[0:3], lastname)
+		pref = f"{firstname[:3]}_{lastname}"
 	elif g % 10 == 0:
-		pref = "%s_%s" % (lastname[0:1], firstname[0:2])
+		pref = f"{lastname[:1]}_{firstname[:2]}"
 	elif g % 6 == 0:
-		pref = "%s%s" % (lastname, firstname[0:1])
+		pref = f"{lastname}{firstname[:1]}"
 	else:
-		pref = "%s%s" % (lastname, firstname)
+		pref = f"{lastname}{firstname}"
 
 	g = randint(1, 100)
 	if g % 3 != 0: # should i add numbers? let's toss a coin heavier on one side.
 		how_many_random_numbers = randint(2, 6)
-		for i in range(0, how_many_random_numbers):
+		for _ in range(0, how_many_random_numbers):
 			pref += (str(randint(0,9)))
 
 	if domain == "":
-		pref = "%s@%s" % (pref, choice(EMAIL_PROVIDERS))
+		pref = f"{pref}@{choice(EMAIL_PROVIDERS)}"
 	else:
-		pref = "%s@%s" % (pref, domain)
+		pref = f"{pref}@{domain}"
 	return pref
 
 
@@ -244,8 +243,8 @@ class CreateTestData:
 		self.fhandler.write("UID, First Name, Last Name, "
 		                    "Email Address, Address, CC PAN, "
 		                    "CC Expiry, CC Vendor, CVV\n")
-		for i in range(0, self.rows):
-			self.fhandler.write("%s" % GenerateRow())
+		for _ in range(0, self.rows):
+			self.fhandler.write(f"{GenerateRow()}")
 		self.fhandler.close()
 		sys.stdout.write("%s data points created to '%s'.\n" % (self.rows, self.file_name))
 		return True

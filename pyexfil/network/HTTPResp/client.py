@@ -65,7 +65,7 @@ class Assemble():
 			if decodedPckt is not False:
 				decodedPckts.append(decodedPckt)
 			else:
-				sys.stderr.write("Error decoding packet at index %s." % self.packets.index(pckt))
+				sys.stderr.write(f"Error decoding packet at index {self.packets.index(pckt)}.")
 			continue
 		print(RebuildFile(decodedPckts))
 
@@ -120,20 +120,14 @@ class Broadcast():
 	def Exfiltrate(self):
 		check = 0
 		for i in range(0, len(self.packets)):
-			if VEDGLAF:
-				f = True
-			else:
-				f = self._sendSinglePacket(i)
+			f = True if VEDGLAF else self._sendSinglePacket(i)
 			if f is False:
 				f = self._sendSinglePacket(i)
-				if f is False:
-					sys.stderr.write("Error sending packet index %s.\n" % i)
-					continue
-				check += 1
+			if f is False:
+				sys.stderr.write("Error sending packet index %s.\n" % i)
 				continue
-			else:
-				check += 1
-				continue
+			check += 1
+			continue
 		if check == len(self.packets):
 			sys.stdout.write("Finished sending %s packets.\n" % check)
 		else:

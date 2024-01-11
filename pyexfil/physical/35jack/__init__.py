@@ -160,7 +160,7 @@ class QAMTransmitter:
             print(f"Error: {e}")
 
 
-    def encode_data(data):
+    def encode_data(self):
         """
         Encodes a string or bytes object as a NumPy array of bits for transmission.
 
@@ -171,13 +171,10 @@ class QAMTransmitter:
             numpy.ndarray: The encoded data as a NumPy array of bits.
         """
         # Convert data to bytes if it is a string
-        if isinstance(data, str):
-            data = data.encode()
+        if isinstance(self, str):
+            self = self.encode()
 
-        # Convert data to a NumPy array of bits
-        bits = np.unpackbits(np.frombuffer(data, dtype=np.uint8))
-
-        return bits
+        return np.unpackbits(np.frombuffer(self, dtype=np.uint8))
 
 
 if __name__ == "__main__":

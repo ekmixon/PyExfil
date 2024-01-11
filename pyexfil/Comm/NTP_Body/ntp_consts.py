@@ -11,8 +11,7 @@ def _buildNTP():
     Build NTP basic structure.
     :return: Header of NTP[bytes str]
     """
-    pyld = "\xd9"  # v3, Symmetric-Active mode
-    pyld += "\x00"  # no stratum
+    pyld = "\xd9" + "\x00"
     pyld += "\x0a"  # polling every 1024 sec (usually default).
     pyld += "\xfa"  # clock per.
     pyld += "\x00" * 4  # delay

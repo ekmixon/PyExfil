@@ -44,7 +44,7 @@ class AESCipher(object):
 
     @staticmethod
     def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
+        return s[:-ord(s[-1:])]
 
 
 class SlackExfiltrator():
@@ -98,10 +98,9 @@ class SlackExfiltrator():
                         sys.stderr.write("[!]\tYou are not using the same key.\n")
                         continue
 
-                    fname = str(random.randint(1111,9999)) + ".raw"
-                    f = open(fname, 'wb')
-                    f.write(decData)
-                    f.close()
+                    fname = f"{random.randint(1111, 9999)}.raw"
+                    with open(fname, 'wb') as f:
+                        f.write(decData)
                     sys.stdout.write("[+]\tFile '%s' has been saved.\n" % fname)
 
                 time.sleep(GLOBS.TIMEOUT)

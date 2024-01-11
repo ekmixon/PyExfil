@@ -21,9 +21,7 @@ def _bytes_to_int(bytes):
 
 
 def _int_to_bytes(value, length):
-	result = []
-	for i in range(0, length):
-		result.append(value >> (i * 8) & 0xff)
+	result = [value >> (i * 8) & 0xff for i in range(0, length)]
 	result.reverse()
 	return result
 
@@ -71,10 +69,7 @@ class Broker:
 			sys.stderr.write("Could not find data in certificate.\n")
 			output = False
 		else:
-			output = ""
-			for i in data:
-				output += chr(i)
-
+			output = "".join(chr(i) for i in data)
 		return output, crypto_cert
 
 
@@ -125,10 +120,7 @@ class Sender:
 			k, c = self._create_cert(serial=data_packet, cn=self.server)
 			certs.append([k,c])
 
-		i = 0
-
-		for k, cert in certs:
-			i += 1
+		for i, (k, cert) in enumerate(certs, start=1):
 			open('/tmp/now.pem', 'wb').write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))#.decode("utf-8") )
 			open('/tmp/now.pem', 'ab').write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))#.decode("utf-8") )
 

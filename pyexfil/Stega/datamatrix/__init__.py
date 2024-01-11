@@ -24,11 +24,9 @@ except ImportError as e:
 		print("libdmtx not found. Please install it with:")
 		print("\tOn MacOS: brew install libdmtx")
 		print("\tOn Ubuntu: sudo apt-get install libdmtx-dev")
-		exit(1)
 	else:
 		print("pylibdmtx not found. Please install it with pip install pylibdmtx.")
-		exit(1)
-
+	exit(1)
 import numpy as np
 
 
@@ -59,22 +57,13 @@ class DataMatrixOverLSB():
 			raise ValueError('level must be one of info, error, success')
 
 	def clear_bit(self, value, bit_index=0):
-		if bit_index < 8:
-			return value & ~(1 << bit_index)
-		else:
-			return value
+		return value & ~(1 << bit_index) if bit_index < 8 else value
 	
 	def get_bit(self, value, bit_index=0):
-		if bit_index < 8:
-			return value & (1 << bit_index)
-		else:
-			return 0
+		return value & (1 << bit_index) if bit_index < 8 else 0
 
 	def set_bit(self, value, bit_index=0):
-		if bit_index < 8:
-			return value | (1 << bit_index)
-		else:
-			return value
+		return value | (1 << bit_index) if bit_index < 8 else value
 
 	def _xor_bytes(self, a: bytes, b: bytes) -> bytes:
 		return bytes(x ^ y for x, y in zip(a, b))
@@ -97,10 +86,10 @@ class DataMatrixOverLSB():
 		return filename
 
 	def _zero_lsb(self, pixels: list) -> list:
-		empty = []
-		for r,g,b in pixels:
-			empty.append([self.clear_bit(r), self.clear_bit(g), self.clear_bit(b)],)
-		return empty
+		return [
+			[self.clear_bit(r), self.clear_bit(g), self.clear_bit(b)]
+			for r, g, b in pixels
+		]
 
 	def _save_pixels_to_image(self, pixels: list, size: tuple, filename: str) -> str:
 		final_packet_pixels = np.array(pixels, dtype=np.uint8)
@@ -114,18 +103,9 @@ class DataMatrixOverLSB():
 			r,g,b = pixels[i]
 			nr,ng,nb = r,g,b
 			# if r is bigger than 100 set nr = 1 bit:
-			if r > 100:
-				nr = 1
-			else:
-				nr = 0
-			if b > 100:
-				nb = 1
-			else:
-				nb = 0
-			if g > 100:
-				ng = 1
-			else:
-				ng = 0
+			nr = 1 if r > 100 else 0
+			nb = 1 if b > 100 else 0
+			ng = 1 if g > 100 else 0
 			output.append([nr,ng,nb])
 		return output
 
@@ -147,48 +127,56 @@ class DataMatrixOverLSB():
 		for i in range(pixel_array.shape[0]):
 			for j in range(3):
 				# get last bit of each pixel:
-				if self.get_bit(pixel_array[i][j]) == 1:
-					output[i][j] = 255
-				else:
-					output[i][j] = 0
+				output[i][j] = 255 if self.get_bit(pixel_array[i][j]) == 1 else 0
 		return output
 
 	def Encode(self, data: bytes, mapping_file_path: str, output_file_path: str) -> str:
 		pixels_array_original,h,w = self._read_image_into_rgb_array(mapping_file_path)
-		dm_file_path = self._create_datamatrix_file(data, f'_1_datamatrix.png')
+		dm_file_path = self._create_datamatrix_file(data, '_1_datamatrix.png')
 
 		# read the image into pixels array:
 		pixels_array_dm = self._read_image_into_rgb_array(dm_file_path)
 		# os.remove(dm_file_path)
 		if self._VERBOSE:
-			self._print(f'Data was converted into DataMatrix and stored in memory.', level=self.SUCCESS)
-		
+			self._print(
+				'Data was converted into DataMatrix and stored in memory.',
+				level=self.SUCCESS,
+			)
+
 		# zero the LSB of the pixels:
 		zeroed_pixels_array_original = self._zero_lsb(pixels_array_original)
 		self._save_pixels_to_image(zeroed_pixels_array_original,(h,w,3) ,'_2_zeroed.png')
 		if self._VERBOSE:
-			self._print(f'LSB of the pixels was zeroed.', level=self.INFO)
-		
+			self._print('LSB of the pixels was zeroed.', level=self.INFO)
+
 		# # convert data matrix pixels to pull up or down:
 		pixels_array_dm = self._pull_down_pixels(self._read_image_into_rgb_array(dm_file_path)[0])
 		if self._VERBOSE:
-			self._print(f'DataMatrix pixels were converted to pull up or down.', level=self.INFO)
+			self._print(
+				'DataMatrix pixels were converted to pull up or down.', level=self.INFO
+			)
 
 		# # merge the two arrays:
 		pixels_array_original = self._merge_arrays(zeroed_pixels_array_original, pixels_array_dm)
 		if self._VERBOSE:
-			self._print(f'DataMatrix pixels were merged with the original image map.', level=self.INFO)
+			self._print(
+				'DataMatrix pixels were merged with the original image map.',
+				level=self.INFO,
+			)
 
 		self._save_pixels_to_image(pixels_array_original,(h,w,3) , output_file_path)
 		if self._VERBOSE:
-			self._print(f'DataMatrix pixels were merged with the original image map.', level=self.SUCCESS)
+			self._print(
+				'DataMatrix pixels were merged with the original image map.',
+				level=self.SUCCESS,
+			)
 
 		return output_file_path
 
 	def Decode(self, image_path: str) -> str:
 		encoded_pixels, w, h = self._read_image_into_rgb_array(image_path)
 		if self._VERBOSE:
-			self._print(f'Image was read into memory.', level=self.SUCCESS)
+			self._print('Image was read into memory.', level=self.SUCCESS)
 
 		# turn encoded_pixels into a numpy array:
 		output_array = np.array(encoded_pixels, dtype=np.uint8)
@@ -196,7 +184,7 @@ class DataMatrixOverLSB():
 		# read only last bit from each pixel
 		output_array = self._get_only_last_bit(pixel_array=output_array)
 		if self._VERBOSE:
-			self._print(f'Last bit of each pixel was read.', level=self.INFO)
+			self._print('Last bit of each pixel was read.', level=self.INFO)
 
 		# convert output_array to a 1D array of '0' and '1' characters
 		string_output_array = ''.join(str(e) for e in output_array.flatten())

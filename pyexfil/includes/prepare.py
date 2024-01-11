@@ -9,11 +9,7 @@ import struct
 import base64
 import hashlib
 
-if sys.version_info[0] < 3:
-    PY_VER = 2
-else:
-    PY_VER = 3
-
+PY_VER = 2 if sys.version_info[0] < 3 else 3
 DEFAULT_KEY                 = "ShutTheFuckUpDonnie!"
 DEFAULT_MAX_PACKET_SIZE     = 65000
 
@@ -36,10 +32,7 @@ def rc4(data, key):
         S[i], S[j] = S[j], S[i]
         out.append(chr(ord(ch) ^ S[(S[i] + S[j]) % 256]))
 
-    if PY_VER is 2:
-        return "".join(out)
-    else:
-        return bytes("".join(out), 'utf-8')
+    return "".join(out) if PY_VER is 2 else bytes("".join(out), 'utf-8')
 
 
 def _splitString(stri, length):
@@ -73,32 +66,33 @@ def DecodePacket(packet_data, enc_key=DEFAULT_KEY, b64_flag=False):
     ret = {}
 
     # Check if we use encryption or not
-    if enc_key == "":
-        encryption = False
-    else:
-        encryption = True
-
-    if b64_flag:
-        data = base64.b64decode(packet_data)
-    else:
-        data = packet_data
-
+    encryption = enc_key != ""
+    data = base64.b64decode(packet_data) if b64_flag else packet_data
     if encryption:
-        if ASCII_DELIMITER in data or BINARY_DELIMITER in data:
-            # This is the first packet. Build logic here.
-            if ASCII_DELIMITER in data:
-                splitData = data.split(ASCII_DELIMITER)
-            else:
-                splitData = data.split(BINARY_DELIMITER)
+        if ASCII_DELIMITER in data:
+            splitData = data.split(ASCII_DELIMITER)
             ret['initFlag'] = True
-            ret['fileData'] = {}
-            ret['fileData']['FileName'] = splitData[0]
-            ret['fileData']['TotalPackets'] = splitData[2]
-            ret['fileData']['SequenceID'] = splitData[3]
-            ret['fileData']['MD5'] = splitData[4]
+            ret['fileData'] = {
+                'FileName': splitData[0],
+                'TotalPackets': splitData[2],
+                'SequenceID': splitData[3],
+                'MD5': splitData[4],
+            }
             ret['packetNumber'] = splitData[1]
             return ret
-            
+
+        elif BINARY_DELIMITER in data:
+            splitData = data.split(BINARY_DELIMITER)
+            ret['initFlag'] = True
+            ret['fileData'] = {
+                'FileName': splitData[0],
+                'TotalPackets': splitData[2],
+                'SequenceID': splitData[3],
+                'MD5': splitData[4],
+            }
+            ret['packetNumber'] = splitData[1]
+            return ret
+
         try:
             data = rc4(data, enc_key)
         except ValueError as e:
@@ -153,16 +147,11 @@ def PrepFile(file_path, kind='binary', max_size=DEFAULT_MAX_PACKET_SIZE, enc_key
         return False
 
     # Set delimiter based on kind of data we can send
-    if kind == 'ascii':
-        delm = ASCII_DELIMITER
-    else:
-        delm = BINARY_DELIMITER
-
+    delm = ASCII_DELIMITER if kind == 'ascii' else BINARY_DELIMITER
     # Read the file
     try:
-        f = open(file_path, 'rb')
-        data = f.read()
-        f.close()
+        with open(file_path, 'rb') as f:
+            data = f.read()
     except IOError as e:
         sys.stderr.write("Error opening file '%s'.\n" % file_path )
         return False
@@ -188,11 +177,7 @@ def PrepFile(file_path, kind='binary', max_size=DEFAULT_MAX_PACKET_SIZE, enc_key
         ret['FileName'] = file_path
     ret['RawHash'] = hash_raw
     ret['CompressedHash'] = hash_compressed
-    if kind == 'ascii':
-        data_for_packets = base64.b64encode(compData)
-    else:
-        data_for_packets = compData
-
+    data_for_packets = base64.b64encode(compData) if kind == 'ascii' else compData
     ret['CompressedSize'] = len(data_for_packets)
     ret['RawSize'] = len(data)
 
@@ -211,9 +196,7 @@ def PrepFile(file_path, kind='binary', max_size=DEFAULT_MAX_PACKET_SIZE, enc_key
 
     initPacket = fname + delm + thisCounter + delm
     initPacket += pcount + delm + seqID + delm + hash_raw
-    if enc_key == "":
-        pass
-    else:
+    if enc_key != "":
         initPacket = rc4(initPacket, enc_key)
     if kind == 'ascii':
         initPacket = rc4(initPacket, enc_key)
@@ -221,10 +204,8 @@ def PrepFile(file_path, kind='binary', max_size=DEFAULT_MAX_PACKET_SIZE, enc_key
 
     ret['Packets'].append(initPacket)
 
-    # Every Packet
-    i = 2
-    for chunk in packetsData:
-        thisPacket = "%s%s%s%s%s" % (seqID, delm, str(i), delm, chunk)
+    for i, chunk in enumerate(packetsData, start=2):
+        thisPacket = f"{seqID}{delm}{str(i)}{delm}{chunk}"
         if enc_key != "":
             thisPacket = rc4(thisPacket, enc_key)
         if kind == 'ascii':
@@ -232,8 +213,6 @@ def PrepFile(file_path, kind='binary', max_size=DEFAULT_MAX_PACKET_SIZE, enc_key
         else:
             ret['Packets'].append(thisPacket)
         thisPacket = ""
-        i += 1
-
     return ret
 
 
@@ -249,7 +228,7 @@ def PrepString(data, max_size=DEFAULT_MAX_PACKET_SIZE, enc_key=DEFAULT_KEY, comp
                 exfiltration sorted by order.
     '''
     ret = {}
-    
+
     # Compute hashes and other meta data
     hash_raw = hashlib.md5(data).hexdigest()
     if enc_key != "":
@@ -257,18 +236,14 @@ def PrepString(data, max_size=DEFAULT_MAX_PACKET_SIZE, enc_key=DEFAULT_KEY, comp
         ret['EncryptionFlag'] = True
     else:
         ret['EncryptionFlag'] = False
-        
+
     if PY_VER is 3:
         if type(enc_key) is bytes:
             enc_key = enc_key.decode("utf-8")
         if type(data) is bytes:
             data = data.decode("utf-8")
-        
-    if enc_key is None:
-        compData = bytes(data, 'utf-8')
-    else:
-        compData = rc4(data, enc_key)
-    
+
+    compData = bytes(data, 'utf-8') if enc_key is None else rc4(data, enc_key)
     if compress:
         compData = zlib.compress(compData)
         compData = base64.b85encode(compData)
@@ -315,13 +290,13 @@ def RebuildFile(packets_data):
     seq = int(initPacket['fileData']['SequenceID'])
     pkts_count = int(initPacket['fileData']['TotalPackets'])
     fname = initPacket['fileData']['FileName']
-    ret = {}
-    ret['FileName'] = fname
-    ret['Packets'] = pkts_count
-    ret['MD5'] = md5
-    ret['Sequence'] = seq
-    ret['Success'] = False
-
+    ret = {
+        'FileName': fname,
+        'Packets': pkts_count,
+        'MD5': md5,
+        'Sequence': seq,
+        'Success': False,
+    }
     ddddata = ""
     for i in range(1, pkts_count+1):
         if i == 1:

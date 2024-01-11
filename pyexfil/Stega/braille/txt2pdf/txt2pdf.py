@@ -95,14 +95,12 @@ class PDFCreator(object):
 
     def _process(self, data):
         flen = os.fstat(data.fileno()).st_size
-        lineno = 0
         read = 0
-        for line in data:
-            lineno += 1
+        for lineno, line in enumerate(data, start=1):
             if sys.version_info.major == 2:
                 read += len(line)
                 yield flen == \
-                    read, lineno, line.decode(self.encoding).rstrip('\r\n')
+                        read, lineno, line.decode(self.encoding).rstrip('\r\n')
             else:
                 read += len(line.encode(self.encoding))
                 yield flen == read, lineno, line.rstrip('\r\n')
@@ -195,7 +193,7 @@ class PDFCreator(object):
         pageno = 1
         lineno = 0
         page = self._newpage()
-        chunk = list()
+        chunk = []
         for last, line in data:
             if lineno == self.linesPerPage:
                 self.canvas.drawText(page)
@@ -207,7 +205,7 @@ class PDFCreator(object):
             chunk.append(line)
             if last or len(line.strip()) == 0:
                 self._writeChunk(page, chunk, lineno)
-                chunk = list()
+                chunk = []
         if lineno > 0:
             self.canvas.drawText(page)
             self.canvas.showPage()

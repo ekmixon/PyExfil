@@ -17,11 +17,7 @@ def Broadcast(data, to=SERVER, port=NTP_PORT, key=KEY):
     :return: Boolean
     """
 	
-	if len(data) > 16:
-		chunks = _splitString(stri=data, length=16)
-	else:
-		chunks = [data]
-
+	chunks = _splitString(stri=data, length=16) if len(data) > 16 else [data]
 	for chunk in chunks:
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		addr = (to, port)

@@ -41,9 +41,9 @@ class Broker():
     def listen_clients(self):
         while True:
             msg, client = self.sock.recvfrom(RECV_BUFFER)
-            logging.info('Received data from client %s.' % str(client))
+            logging.info(f'Received data from client {str(client)}.')
             decData = AESDecryptOFB(key=self.key, text=msg[-16:])
-            logging.info('Decrypted message reads: %s.' % decData)
+            logging.info(f'Decrypted message reads: {decData}.')
             t = threading.Thread(target=self.talkToClient, args=(client,))
             t.start()
 

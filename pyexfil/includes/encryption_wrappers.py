@@ -17,8 +17,7 @@ def AESEncryptOFB(key, text):
 	padded_text = text + b'\x00' * pad_len
 	padded_key = key +  b'\x00' * (32 - len(key))
 	encs = AES.new(padded_key, mode, iv.encode("utf8"))
-	plain = encs.encrypt(padded_text)
-	return plain
+	return encs.encrypt(padded_text)
 
 def AESDecryptOFB(key, text, unpad=True):
 	if type(key) == str:
@@ -52,8 +51,7 @@ def PRGA(S):
 		i = (i + 1) % 256
 		j = (j + S[i]) % 256
 		S[i], S[j] = S[j], S[i]  # swap
-		K = S[(S[i] + S[j]) % 256]
-		yield K
+		yield S[(S[i] + S[j]) % 256]
 
 
 def RC4_unwrapped(key):

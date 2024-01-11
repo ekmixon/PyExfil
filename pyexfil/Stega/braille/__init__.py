@@ -45,11 +45,10 @@ def _prep_brailles_system():
 
 def _create_image(text):
 	dubb = _splitString(text, 90)
-	o_file = open("output.txt", 'wb')
-	for i in dubb:
-		o_file.write(bytes(i, 'utf-8'))
-		o_file.write(bytes("\n", 'utf-8'))
-	o_file.close()
+	with open("output.txt", 'wb') as o_file:
+		for i in dubb:
+			o_file.write(bytes(i, 'utf-8'))
+			o_file.write(bytes("\n", 'utf-8'))
 	os.system("python pyexfil/Stega/braille/txt2pdf/txt2pdf.py -q -s 8 -o output.pdf -f \"Apple Braille.ttf\" output.txt")
 
 
@@ -59,9 +58,7 @@ def read_and_prep_file(file_path):
 	for i in range(97,97+6):
 		temp = temp.replace(chr(i), chr(i+6))
 
-	output = []
-	for rr in temp:
-		output.append(N_BRAILLES[N_ASCIICODES.index(rr.lower())])
+	output = [N_BRAILLES[N_ASCIICODES.index(rr.lower())] for rr in temp]
 	return ''.join(output)
 
 
@@ -70,8 +67,7 @@ def decode_data(data):
 		_prep_brailles_system()
 	output = []
 	try:
-		for rr in data:
-			output.append(N_ASCIICODES[N_BRAILLES.index(rr)])
+		output.extend(N_ASCIICODES[N_BRAILLES.index(rr)] for rr in data)
 	except:
 		sys.stderr.write("Data is not properly encoded.\n")
 		return None

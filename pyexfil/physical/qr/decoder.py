@@ -61,7 +61,7 @@ def startFlow(mode):
         file_md5 = ""
         amount_of_code = 0
 
-        png_files = glob.glob(QR_DIR + "/*.png")
+        png_files = glob.glob(f"{QR_DIR}/*.png")
         for png in png_files:
             decoded = _decodePNG(png)
 
@@ -69,20 +69,20 @@ def startFlow(mode):
                 sys.stderr.write("Could not decode file '%s'.\n" % png)
                 continue
 
-            if png == QR_DIR + "/0.png":
+            if png == f"{QR_DIR}/0.png":
                 # Header file
                 file_name, file_md5, amount_of_code = decoded[0].split(DELIMITER)
                 amount_of_code = int(amount_of_code)
                 continue
 
-            counter = int(decoded[0][0:2])
+            counter = int(decoded[0][:2])
             data = decoded[0][2:]
             file_data[counter] = data
 
         # Done with PNG analysis, now for decoding:
         raw = ""
         if int(counter) == amount_of_code:
-            for key, val in file_data.items():
+            for val in file_data.values():
                 raw += val
         try:
             rdata = base64.b64decode(raw)
@@ -101,12 +101,10 @@ def startFlow(mode):
         else:
             sys.stderr.write("Hashes do not match. Saving anyway.\n")
 
-        f = open(file_name.replace("/", "_"), "wb")
-        f.write(rdata)
-        f.close()
+        with open(file_name.replace("/", "_"), "wb") as f:
+            f.write(rdata)
         return True
 
-    # Live mode. Capturing QRs from Webcam
     elif mode == CAM_MODE:
         sys.stdout.write("Hit Ctrl+C to stop listening.\n")
         while True:
@@ -129,13 +127,13 @@ def startFlow(mode):
                         continue
 
                     # First package was analyzed successfully.
-                    counter = int(decoded[0][0:2])
+                    counter = int(decoded[0][:2])
                     data = decoded[0][2:]
                     file_data[counter] = data
 
                     raw = ""
-                    if int(counter) == amount_of_code:
-                        for key, val in file_data.items():
+                    if counter == amount_of_code:
+                        for val in file_data.values():
                             raw += val
                         try:
                             rdata = base64.b64decode(raw)
@@ -154,10 +152,8 @@ def startFlow(mode):
                         else:
                             sys.stderr.write("Hashes do not match. Saving anyway.\n")
 
-                        f = open(file_name.replace("/", "_"), "wb")
-                        f.write(rdata)
-                        f.close()
-
+                        with open(file_name.replace("/", "_"), "wb") as f:
+                            f.write(rdata)
                 time.sleep(1)
             except KeyboardInterrupt:
                 sys.stdout.write("\nGot a KeyboardInterrupt.\n")
