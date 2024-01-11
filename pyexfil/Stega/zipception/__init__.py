@@ -47,7 +47,7 @@ class Broker:
 			self.current_file = zipfile.filelist[0].filename
 			self.current_iteration += 1
 
-			if self.current_file != "True.zip" and self.current_file != "False.zip":
+			if self.current_file not in ["True.zip", "False.zip"]:
 				self.end = True
 				sys.stdout.write("Finished with %s iterations.\n" % self.current_iteration)
 
@@ -69,16 +69,16 @@ class Sender:
 			even = (i % 2 == 0)
 			pbar.update(i)
 
-			with ZipFile('%s.zip' % even, 'w') as zip:
+			with ZipFile(f'{even}.zip', 'w') as zip:
 				if self.key is not None:
 					zip.setpassword(bytes(self.key))
 
 				for file in self.all_files:
 					zip.write(file)
 
-				self.all_files = ['%s.zip' % (even)]
+				self.all_files = [f'{even}.zip']
 				try:
-					os.remove('%s.zip' % str(not even))
+					os.remove(f'{not even}.zip')
 				except:
 					pass
 

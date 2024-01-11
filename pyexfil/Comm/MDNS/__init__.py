@@ -6,7 +6,7 @@ MDNS_PORT = 5353
 TEST_QUERY = "main_zone_tcp.local"
 
 
-def Send (dst_ip, data, sequence=0, spoof_source=False, dst_port=MDNS_PORT, src_port=MDNS_PORT, dns_name=TEST_QUERY):
+def Send(dst_ip, data, sequence=0, spoof_source=False, dst_port=MDNS_PORT, src_port=MDNS_PORT, dns_name=TEST_QUERY):
 	"""
 	Send one packet of MDNS with data.
 	:param dst_ip: IP as string.
@@ -18,10 +18,9 @@ def Send (dst_ip, data, sequence=0, spoof_source=False, dst_port=MDNS_PORT, src_
 	:param dns_name: DNS name to put in the MDNS request.
 	:return: semper vera!!!
 	"""
-	payload = ""
-	payload += "\x00"  # TransID is 2 bytes. Using one for sequence.
+	payload = "" + "\x00"
 	payload += struct.pack('B', sequence)
-	
+
 	payload += "\x00\x00"  # Stndrt qry
 	payload += "\x00\x01"  # 1 questions
 	payload += "\x00\x00"  # 0 ans RRs
@@ -33,7 +32,7 @@ def Send (dst_ip, data, sequence=0, spoof_source=False, dst_port=MDNS_PORT, src_
 	payload += "\x00"  # Query Terminator
 	payload += "\x00\x0c"  # PTR request
 	payload += "\x00\x01"  # class IN
-	
+
 	if spoof_source is False:
 		pkt = IP(
 				dst = dst_ip

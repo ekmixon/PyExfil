@@ -19,5 +19,4 @@ def _image2pixelarray(imgObj):
 	:param imgObj: PIL Image Object
 	:return: List, pixels
 	"""
-	pixels = list(imgObj.getdata())
-	return pixels
+	return list(imgObj.getdata())

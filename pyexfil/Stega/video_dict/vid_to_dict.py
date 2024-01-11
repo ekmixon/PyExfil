@@ -48,14 +48,13 @@ def _map_images_to_bytes(folder_path, all_frames):
     bytes_to_map = BYTES
 
     for fpath in all_frames:
-        img, ImageWidth, ImageHeight, TotalPixels = openImage(folder_path+"/"+fpath)
+        img, ImageWidth, ImageHeight, TotalPixels = openImage(f"{folder_path}/{fpath}")
         frame_index = int(fpath.replace("frame_", "").replace(".jpg", ""))
         pixels = image2pixelarray(img)
         for i in range(0, len(pixels)):
             r,g,b = pixels[i][0], pixels[i][1], pixels[i][2]
             if len(bytes_to_map) == 0:
                 return True
-                sys.stdout.write("[+]\tDone mapping!\n")
             for byte_left in bytes_to_map:
                 if byte_left == r:
                     INDEX_MAP[byte_left] = {"frame": frame_index,"pixel": i,"colour": "r"}
@@ -92,8 +91,7 @@ def openImage(image_path):
 
 def image2pixelarray(imgObj):
     arr = np.array(imgObj)
-    pixels = list(imgObj.getdata())
-    return pixels
+    return list(imgObj.getdata())
 
 def _create_tmp_dir():
     try:
@@ -146,10 +144,7 @@ def DecodeDictionary(originalVideo, dictionaryFile, outputFile):
         if i in frames:
             sys.stdout.write("[.]\tGot to frame %s which i need.\n" % i)
             cv2.imwrite("%s/_frame_%d.jpg" % (FRAMES_FOLDER, i), image)     # save frame as JPEG file
-            i += 1
-        else:
-            i += 1
-
+        i += 1
     # Open all the images for quick searching but hogging RAM.
     # Fuck it, i'm Python!
     frames_pixels = {}
@@ -174,9 +169,8 @@ def DecodeDictionary(originalVideo, dictionaryFile, outputFile):
     sys.stdout.write("[.]\tLength of decoded data is %s.\n" % len(DecodedData))
     unzip = zlib.decompress(DecodedData)
     sys.stdout.write("[.]\tLength of decoded unzipped data is %s.\n" % len(unzip))
-    f = open(outputFile, 'wb')
-    f.write(unzip)
-    f.close()
+    with open(outputFile, 'wb') as f:
+        f.write(unzip)
     sys.stdout.write("[+]\tFile has been decoded and saved to '%s'.\n" % outputFile)
     sys.stdout.write("\n")
 
@@ -210,21 +204,17 @@ def TranscriptData(video_file, input_file, output_index):
 
         # Do about 2 out of 3
         test_me = random.randint(11111,99999)
+        success,image = vidcap.read()
         if test_me % 3 == 0:
-            success,image = vidcap.read()
             sys.stdout.write(".")
             sys.stdout.flush()
             cv2.imwrite("%s/frame_%d.jpg" % (FRAMES_FOLDER, image_index), image)     # save frame as JPEG file
             all_frames.append('frame_%d.jpg' % image_index)
             count += 1
-            image_index += 1
         else:
-            success,image = vidcap.read()
             sys.stdout.write("*")
             sys.stdout.flush()
-            image_index += 1
-            continue
-
+        image_index += 1
     # Get the frames and map bytes to matching r,g,b values.
     bytes_map = _map_images_to_bytes(FRAMES_FOLDER, all_frames)
     if bytes_map is False:
@@ -238,27 +228,26 @@ def TranscriptData(video_file, input_file, output_index):
     compressed_data = zlib.compress(data_to_exfil, 9)
     sys.stdout.write("[.]\tGoing to create a dictionary for %s bytes of compressed data.\n" % len(compressed_data))
 
-    # Map it out to plots
-    encoded = []
-    for byte in compressed_data:
-        encoded.append(INDEX_MAP[ord(byte)])
-
-    # Generate Short_String from that data:
-    string_it = ""
-    for data in encoded:
-        string_it += data['colour'] +","+str(data['frame']) +","+str(data['pixel'])+";"
-
-    f = open(output_index, 'w')
-    f.write(string_it)
-    f.close()
-
+    encoded = [INDEX_MAP[ord(byte)] for byte in compressed_data]
+    string_it = "".join(
+        data['colour']
+        + ","
+        + str(data['frame'])
+        + ","
+        + str(data['pixel'])
+        + ";"
+        for data in encoded
+    )
+    with open(output_index, 'w') as f:
+        f.write(string_it)
     zipped_dictionary = zlib.compress(string_it)
-    f = open(output_index+".zip", 'wb')
-    f.write(zipped_dictionary)
-    f.close()
-
+    with open(f"{output_index}.zip", 'wb') as f:
+        f.write(zipped_dictionary)
     sys.stdout.write("[+]\tOutput dictionary has been save to %s.\n" % output_index)
-    sys.stdout.write("[+]\tAlso a zipped dictionary has been save to %s.\n" % (output_index+".zip"))
+    sys.stdout.write(
+        "[+]\tAlso a zipped dictionary has been save to %s.\n"
+        % f"{output_index}.zip"
+    )
     sys.stdout.write("\n")
 
 if __name__ == "__main__":

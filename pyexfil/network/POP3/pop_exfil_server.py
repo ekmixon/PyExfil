@@ -60,7 +60,7 @@ def clientthread(conn):
     entire_file = ""
 
     progress = progressbar.ProgressBar()
-    for i in progress(range(int(conv[2]))):         # Was While-True
+    for _ in progress(range(int(conv[2]))):
         data = conn.recv(MAX_SIZE)
         conn.send("-ERR [AUTH] Authentication failed\n")
         packet_counter += 1
@@ -83,9 +83,8 @@ def clientthread(conn):
     else:
         sys.stderr.write("[-] CRC32 checksum does not match. Saving anyway.\n")
 
-    f = open(file_name, 'wb')
-    f.write(file_cont)
-    f.close()
+    with open(file_name, 'wb') as f:
+        f.write(file_cont)
     sys.stdout.write("[+] Saved file '%s' with length of %s.\n" % (file_name, len(file_cont)))
 
 

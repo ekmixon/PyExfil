@@ -64,8 +64,8 @@ class Broker():
 	def listen_clients(self):
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		
-		logging.info("Listening on UDP %s:%s" % (self.host, self.port))
+
+		logging.info(f"Listening on UDP {self.host}:{self.port}")
 		s.bind((self.host, self.port))
 		while True:
 			(data, addr) = s.recvfrom(128 * 1024)
@@ -101,4 +101,4 @@ if __name__ == '__main__':
 
 		else:
 			b.broadcast_message(msg)
-			logging.info("[%s] out the door." % len(msg))
+			logging.info(f"[{len(msg)}] out the door.")

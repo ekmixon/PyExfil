@@ -63,7 +63,7 @@ def CreateQRs(filename, folder=DEFAULT_FOLDER):
 
 def PlayQRs(folder=DEFAULT_FOLDER):
     all_pngs = [each for each in os.listdir(folder) if each.endswith('.png')]
-    if len(all_pngs) == 0:
+    if not all_pngs:
         sys.stderr.write("No images found to display.\n")
         return False
 

@@ -5,10 +5,11 @@ BSSID_NAME  = "pyExfil"
 MAX_SIZE    = 65000
 ADAPTER     = "en2"
 DELIMITER   = "\x00\xFF\x00\xFF" # Using this delimiter since after compression and encryption
-                                 # chars should not be repeating like this.
 ADDR1       = "00:00:00:00:00:42"
 ADDR2       = "00:00:00:00:00:42"
 ADDR3       = "00:00:00:00:00:42"
+
+
 
 class Dot11EltRates(Packet):
     """ Our own definition for the supported rates field """
@@ -16,9 +17,10 @@ class Dot11EltRates(Packet):
     # Our Test STA supports the rates 6, 9, 12, 18, 24, 36, 48 and 54 Mbps
     supported_rates = [0x0c, 0x12, 0x18, 0x24, 0x30, 0x48, 0x60, 0x6c]
     fields_desc = [ByteField("ID", 1), ByteField("len", len(supported_rates))]
-    for index, rate in enumerate(supported_rates):
-        fields_desc.append(ByteField("supported_rate{0}".format(index + 1),
-                                     rate))
+    fields_desc.extend(
+        ByteField("supported_rate{0}".format(index + 1), rate)
+        for index, rate in enumerate(supported_rates)
+    )
 
 class AESCipher(object):
 
@@ -43,7 +45,7 @@ class AESCipher(object):
 
     @staticmethod
     def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
+        return s[:-ord(s[-1:])]
 
 dataObject = {}
 

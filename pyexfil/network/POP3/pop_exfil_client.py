@@ -57,7 +57,7 @@ if __name__ == "__main__":
         sys.stderr.write("[-] Server did not accept the user. Something is wrong.\n")
         sys.exit(ERR)
     all_data_packets = [b64_file[i:i+CHUNK] for i in range(0, len(b64_file), CHUNK)]
-    sock.send(base64.b64encode("%s;%s;%s;0" % (FLOC, file_crc, len(all_data_packets)))) # filename, crc32, packets_count, this_packet_count
+    sock.send(base64.b64encode(f"{FLOC};{file_crc};{len(all_data_packets)};0"))
     sys.stdout.write("[+] Server passed auth and has received the header.\n")
     data = sock.recv(MAX_SIZE)
     if data.find("-ERR [AUTH] Authentication failed") == -1:
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     progress = progressbar.ProgressBar()
     for i in progress(range(len(all_data_packets))):
-        sock.send("%s;%s" % (i, all_data_packets[i]))
+        sock.send(f"{i};{all_data_packets[i]}")
         time.sleep(0.1)
         data = sock.recv(MAX_SIZE)
         if data.find("-ERR [AUTH] Authentication failed") == -1:

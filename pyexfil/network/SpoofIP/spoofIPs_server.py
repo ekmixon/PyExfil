@@ -23,15 +23,12 @@ def pkt_callback(pkt):
             try:
                 write_me = zlib.decompress(data)
                 md5_file = hashlib.md5(write_me).hexdigest()
-                open("%s.output" % md5_file, 'wb').write(write_me)
+                open(f"{md5_file}.output", 'wb').write(write_me)
                 sys.stdout.write("Wrote outputfile to %s.output.\n" % md5_file)
                 data_incoming = ""
             except:
                 sys.stderr.write("Something went wrong with data decompression.\n")
                 data_incoming = ""
-        else:
-            # Packet not matching origin port
-            pass
 
 if __name__ == "__main__":
     sniff(iface="en0", prn=pkt_callback, filter="tcp", store=0)

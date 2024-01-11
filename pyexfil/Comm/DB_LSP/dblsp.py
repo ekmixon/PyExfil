@@ -50,7 +50,7 @@ class AESCipher(object):
 
 	@staticmethod
 	def _unpad(s):
-		return s[:-ord(s[len(s)-1:])]
+		return s[:-ord(s[-1:])]
 
 class mydict(dict):
 	"""
@@ -159,7 +159,7 @@ def StartShell():
 			sys.stderr.write("Whhhat?\n")
 			continue
 
-		if command.strip() == "exit" or command.strip() == "quit":
+		if command.strip() in ["exit", "quit"]:
 			if active:
 				params['thread']._Thread__stop()
 			sys.stdout.write("Thanks and see you soon.\n")
@@ -185,21 +185,20 @@ def StartShell():
 					sys.stderr.write("Please set a key with 'set key P@$$WorD!'.\n")
 					continue
 
-				if not active:
-					if len(split_command) == 3:
-						dbObj = DB_LSP(cnc=split_command[2], data=split_command[1], key=params['key'])
-						dbObj._Create()
-						dbObj.Send()
-					else:
-						sys.stderr.write("Please use 'send \"this is data\" 8.8.8.8'.\n")
-
-				else:
+				if active:
 					if len(split_command) == 2:
 						dbObj = DB_LSP(cnc=params['server'], data=split_command[1], key=params['key'])
 						dbObj._Create()
 						dbObj.Send()
 					else:
 						sys.stderr.write("Please use 'send \"this is data\"' since you're in active mode.\n")
+
+				elif len(split_command) == 3:
+					dbObj = DB_LSP(cnc=split_command[2], data=split_command[1], key=params['key'])
+					dbObj._Create()
+					dbObj.Send()
+				else:
+					sys.stderr.write("Please use 'send \"this is data\" 8.8.8.8'.\n")
 
 			elif split_command[0] == "set":
 				if len(split_command) == 3:
@@ -237,9 +236,6 @@ def StartShell():
 				sys.stdout.write("Deactivating.\n")
 				params['thread']._Thread__stop()
 				active = False
-
-			else:
-				pass
 
 def _help():
 	help_text = """

